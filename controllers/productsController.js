@@ -1,11 +1,16 @@
-import { getDBConnection } from '../db/db.js'
+import database from '../infra/database.js'
 
 export async function getGenres(req, res) {
   try {
-    const db = await getDBConnection()
+    const result = await database.query(
+      `
+      SELECT DISTINCT genre
+      FROM products
+      WHERE genre IS NOT NULL
+      `
+    )
 
-    const genreRows = await db.all('SELECT DISTINCT genre FROM products')
-    const genres = genreRows.map((row) => row.genre)
+    const genres = result.rows.map((row) => row.genre)
     res.json(genres)
   } catch (err) {
     res
@@ -16,25 +21,28 @@ export async function getGenres(req, res) {
 
 export async function getProducts(req, res) {
   try {
-    const db = await getDBConnection()
-
-    let query = 'SELECT * FROM products'
-    let params = []
+    let text = 'SELECT * FROM products'
+    let values = []
 
     const { genre, search } = req.query
 
     if (genre) {
-      query += ' WHERE genre = ?'
-      params.push(genre)
+      text += ' WHERE genre = $1'
+      values.push(genre)
     } else if (search) {
-      query += ' WHERE title LIKE ? OR artist LIKE ? OR genre LIKE ?'
+      text += `
+        WHERE
+          title  ILIKE $1 OR
+          artist ILIKE $2 OR
+          genre  ILIKE $3
+      `
       const searchPattern = `%${search}%`
-      params.push(searchPattern, searchPattern, searchPattern)
+      values.push(searchPattern, searchPattern, searchPattern)
     }
 
-    const products = await db.all(query, params)
+    const result = await database.query({ text, values })
 
-    res.json(products)
+    res.json(result.rows)
   } catch (err) {
     res
       .status(500)

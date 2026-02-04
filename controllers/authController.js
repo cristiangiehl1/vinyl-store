@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs'
 import validator from 'validator'
 
-import { getDBConnection } from '../db/db.js'
+import database from '../infra/database.js'
 
 export async function registerUser(req, res) {
   let { name, email, username, password } = req.body
@@ -26,14 +26,16 @@ export async function registerUser(req, res) {
   }
 
   try {
-    const db = await getDBConnection()
+    const existing = await database.query({
+      text: `
+      SELECT id
+      FROM users
+      WHERE email = $1 OR username = $2
+      `,
+      values: [email, username],
+    })
 
-    const existing = await db.get(
-      'SELECT id FROM users WHERE email = ? OR username = ?',
-      [email, username]
-    )
-
-    if (existing) {
+    if (existing.rows.length > 0) {
       return res
         .status(400)
         .json({ error: 'Email or username already in use.' })
@@ -41,12 +43,17 @@ export async function registerUser(req, res) {
 
     const hashed = await bcrypt.hash(password, 10)
 
-    const result = await db.run(
-      'INSERT INTO users (name, email, username, password) VALUES (?, ?, ?, ?)',
-      [name, email, username, hashed]
-    )
+    const result = await database.query({
+      text: `
+      INSERT INTO users (name, email, username, password)
+      VALUES ($1, $2, $3, $4)
+      RETURNING id
+      `,
+      values: [name, email, username, hashed],
+    })
+    console.log(result.rows[0])
 
-    req.session.userId = result.lastID
+    req.session.userId = result.rows[0].id
 
     res.status(201).json({ message: 'User registered' })
   } catch (err) {
@@ -65,11 +72,16 @@ export async function loginUser(req, res) {
   username = username.trim()
 
   try {
-    const db = await getDBConnection()
+    const result = await database.query({
+      text: `
+      SELECT id, password
+      FROM users
+      WHERE username = $1
+      `,
+      values: [username],
+    })
 
-    const user = await db.get('SELECT * FROM users WHERE username = ?', [
-      username,
-    ])
+    const user = result.rows[0]
 
     if (!user) {
       return res.status(401).json({ error: 'Invalid credentials' })

@@ -1,0 +1,14 @@
+services:
+  database:
+    container_name: "postgres-spiral-cords"
+    image: "postgres:16.0-alpine3.18"
+    env_file:
+      - ../.env
+    ports:
+      # HOST:CONTAINER (DEFAULT POSTGRES VALUE)
+      - "5555:5432"
+    volumes:
+      - postgres-spiral-cords:/var/lib/postgresql/data
+
+volumes:
+  postgres-spiral-cords:

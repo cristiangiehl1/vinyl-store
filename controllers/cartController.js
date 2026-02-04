@@ -1,8 +1,6 @@
-import { getDBConnection } from '../db/db.js'
+import database from '../infra/database.js'
 
 export async function addToCart(req, res) {
-  const db = await getDBConnection()
-
   const productId = parseInt(req.body.productId, 10)
 
   if (isNaN(productId)) {
@@ -11,77 +9,112 @@ export async function addToCart(req, res) {
 
   const userId = req.session.userId
 
-  const existing = await db.get(
-    'SELECT * FROM cart_items WHERE user_id = ? AND product_id = ?',
-    [userId, productId]
-  )
+  const existing = await database.query({
+    text: `
+      SELECT id, quantity
+      FROM cart_items
+      WHERE user_id = $1 AND product_id = $2
+      `,
+    values: [userId, productId],
+  })
 
-  if (existing) {
-    await db.run('UPDATE cart_items SET quantity = quantity + 1 WHERE id = ?', [
-      existing.id,
-    ])
+  if (existing.rows.length > 0) {
+    await database.query({
+      text: `
+        UPDATE cart_items
+        SET quantity = quantity + 1
+        WHERE id = $1
+        `,
+      values: [existing.rows[0].id],
+    })
   } else {
-    await db.run(
-      'INSERT INTO cart_items (user_id, product_id, quantity) VALUES (?, ?, 1)',
-      [userId, productId]
-    )
+    await database.query({
+      text: `
+        INSERT INTO cart_items (user_id, product_id, quantity)
+        VALUES ($1, $2, 1)
+        `,
+      values: [userId, productId],
+    })
   }
 
   res.json({ message: 'Added to cart' })
 }
 
 export async function getCartCount(req, res) {
-  const db = await getDBConnection()
+  const userId = req.session.userId
 
-  const result = await db.get(
-    `SELECT SUM(quantity) AS totalItems FROM cart_items WHERE user_id = ?`,
-    [req.session.userId]
-  )
+  const result = await database.query({
+    text: `
+      SELECT COALESCE(SUM(quantity), 0) AS total_items
+      FROM cart_items
+      WHERE user_id = $1
+      `,
+    values: [userId],
+  })
 
-  res.json({ totalItems: result.totalItems || 0 })
+  res.json({ totalItems: Number(result.rows[0].total_items) })
 }
 
 export async function getAll(req, res) {
-  const db = await getDBConnection()
+  const userId = req.session.userId
 
-  const items = await db.all(
-    `SELECT ci.id AS cartItemId, ci.quantity, p.title, p.artist, p.price FROM cart_items ci JOIN products p ON p.id = ci.product_id WHERE ci.user_id = ?`,
-    [req.session.userId]
-  )
+  const result = await database.query({
+    text: `
+      SELECT
+        ci.id   AS "cartItemId",
+        ci.quantity,
+        p.title,
+        p.artist,
+        p.price
+      FROM cart_items ci
+      JOIN products p ON p.id = ci.product_id
+      WHERE ci.user_id = $1
+      `,
+    values: [userId],
+  })
 
-  res.json({ items: items })
+  res.json({ items: result.rows })
 }
 
 export async function deleteItem(req, res) {
-  const db = await getDBConnection()
-
   const itemId = parseInt(req.params.itemId, 10)
+  const userId = req.session.userId
 
   if (isNaN(itemId)) {
     return res.status(400).json({ error: 'Invalid item ID' })
   }
 
-  const item = await db.get(
-    'SELECT quantity FROM cart_items WHERE id = ? AND user_id = ?',
-    [itemId, req.session.userId]
-  )
+  const item = await database.query({
+    text: 'SELECT quantity FROM cart_items WHERE id = $1 AND user_id = $2',
+    values: [itemId, userId],
+  })
 
-  if (!item) {
-    return res.status(400).json({ error: 'Item not found' })
+  if (item.rows.length === 0) {
+    return res.status(404).json({ error: 'Item not found' })
   }
 
-  await db.run('DELETE FROM cart_items WHERE id = ? AND user_id = ?', [
-    itemId,
-    req.session.userId,
-  ])
+  await database.query({
+    text: `
+      DELETE FROM cart_items
+      WHERE id = $1 AND user_id = $2
+      RETURNING id
+      `,
+    values: [itemId, userId],
+  })
 
   res.status(204).send()
 }
 
 export async function deleteAll(req, res) {
-  const db = await getDBConnection()
+  const userId = req.session.userId
 
-  await db.run('DELETE FROM cart_items WHERE user_id = ?', [req.session.userId])
+  await database.query({
+    text: `
+      DELETE FROM cart_items
+      WHERE user_id = $1
+      `,
+    values: [userId],
+  })
 
   res.status(204).send()
 }
