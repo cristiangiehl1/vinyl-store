@@ -5,7 +5,7 @@
   "main": "server.js",
   "type": "module",
   "scripts": {
-    "build": "netlify deploy --prod",
+    "deploy": "netlify deploy --prod",
     "dev": "trap \"npm run services:stop\" INT EXIT && npm run services:up && npm run migrations:up && nodemon server.js",
     "lint:check": "prettier --check .",
     "lint:fix": "prettier --write .",
