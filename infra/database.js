@@ -25,11 +25,7 @@ export async function getNewClient() {
   }
 
   const client = new Client({
-    host: process.env.POSTGRES_HOST,
-    port: parseInt(portEnv, 10),
-    user: process.env.POSTGRES_USER,
-    database: process.env.POSTGRES_DB,
-    password: process.env.POSTGRES_PASSWORD,
+    connectionString: process.env.DATABASE_URL,
     ssl: getSSLValues(),
   })
 
