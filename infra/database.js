@@ -11,7 +11,9 @@ export async function query(queryObj) {
   } catch (err) {
     throw new Error('Error to connect with Database or Query', { cause: err })
   } finally {
-    client.end()
+    if (client) {
+      await client.end()
+    }
   }
 }
 
