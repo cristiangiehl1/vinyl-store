@@ -1,4 +1,4 @@
-import database from '../infra/database.js'
+import { query } from '../infra/database.js'
 
 export async function addToCart(req, res) {
   const productId = parseInt(req.body.productId, 10)
@@ -9,7 +9,7 @@ export async function addToCart(req, res) {
 
   const userId = req.session.userId
 
-  const existing = await database.query({
+  const existing = await query({
     text: `
       SELECT id, quantity
       FROM cart_items
@@ -19,7 +19,7 @@ export async function addToCart(req, res) {
   })
 
   if (existing.rows.length > 0) {
-    await database.query({
+    await query({
       text: `
         UPDATE cart_items
         SET quantity = quantity + 1
@@ -28,7 +28,7 @@ export async function addToCart(req, res) {
       values: [existing.rows[0].id],
     })
   } else {
-    await database.query({
+    await query({
       text: `
         INSERT INTO cart_items (user_id, product_id, quantity)
         VALUES ($1, $2, 1)
@@ -43,7 +43,7 @@ export async function addToCart(req, res) {
 export async function getCartCount(req, res) {
   const userId = req.session.userId
 
-  const result = await database.query({
+  const result = await query({
     text: `
       SELECT COALESCE(SUM(quantity), 0) AS total_items
       FROM cart_items
@@ -58,7 +58,7 @@ export async function getCartCount(req, res) {
 export async function getAll(req, res) {
   const userId = req.session.userId
 
-  const result = await database.query({
+  const result = await query({
     text: `
       SELECT
         ci.id   AS "cartItemId",
@@ -84,7 +84,7 @@ export async function deleteItem(req, res) {
     return res.status(400).json({ error: 'Invalid item ID' })
   }
 
-  const item = await database.query({
+  const item = await query({
     text: 'SELECT quantity FROM cart_items WHERE id = $1 AND user_id = $2',
     values: [itemId, userId],
   })
@@ -93,7 +93,7 @@ export async function deleteItem(req, res) {
     return res.status(404).json({ error: 'Item not found' })
   }
 
-  await database.query({
+  await query({
     text: `
       DELETE FROM cart_items
       WHERE id = $1 AND user_id = $2
@@ -108,7 +108,7 @@ export async function deleteItem(req, res) {
 export async function deleteAll(req, res) {
   const userId = req.session.userId
 
-  await database.query({
+  await query({
     text: `
       DELETE FROM cart_items
       WHERE user_id = $1

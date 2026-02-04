@@ -1,4 +1,4 @@
-import database from '../infra/database.js'
+import { query } from '../infra/database.js'
 
 export async function getCurrentUser(req, res) {
   const userId = req.session.userId
@@ -8,7 +8,7 @@ export async function getCurrentUser(req, res) {
       return res.json({ isLoggedIn: false })
     }
 
-    const result = await database.query({
+    const result = await query({
       text: 'SELECT name FROM users WHERE id = $1',
       values: [userId],
     })

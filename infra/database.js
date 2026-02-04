@@ -2,7 +2,7 @@ import 'dotenv/config'
 
 import { Client } from 'pg'
 
-async function query(queryObj) {
+export async function query(queryObj) {
   let client
   try {
     client = await getNewClient()
@@ -15,7 +15,7 @@ async function query(queryObj) {
   }
 }
 
-async function getNewClient() {
+export async function getNewClient() {
   const portEnv = process.env.POSTGRES_PORT
 
   if (!portEnv) {
@@ -35,15 +35,8 @@ async function getNewClient() {
   return client
 }
 
-const database = {
-  query,
-  getNewClient,
-}
-
 function getSSLValues() {
   if (process.env.POSTGRES_CA) return { ca: process.env.POSTGRES_CA }
 
   return process.env.NODE_ENV === 'production' ? true : false
 }
-
-export default database

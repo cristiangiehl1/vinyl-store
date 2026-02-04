@@ -1,10 +1,10 @@
 import 'dotenv/config'
 
 import { vinyl } from '../../data.js'
-import database from '../database.js'
+import { getNewClient } from '../database.js'
 
 async function seedTable() {
-  const client = await database.getNewClient()
+  const client = await getNewClient()
 
   try {
     await client.query('BEGIN')

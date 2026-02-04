@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs'
 import validator from 'validator'
 
-import database from '../infra/database.js'
+import { query } from '../infra/database.js'
 
 export async function registerUser(req, res) {
   let { name, email, username, password } = req.body
@@ -26,7 +26,7 @@ export async function registerUser(req, res) {
   }
 
   try {
-    const existing = await database.query({
+    const existing = await query({
       text: `
       SELECT id
       FROM users
@@ -43,7 +43,7 @@ export async function registerUser(req, res) {
 
     const hashed = await bcrypt.hash(password, 10)
 
-    const result = await database.query({
+    const result = await query({
       text: `
       INSERT INTO users (name, email, username, password)
       VALUES ($1, $2, $3, $4)
@@ -51,7 +51,6 @@ export async function registerUser(req, res) {
       `,
       values: [name, email, username, hashed],
     })
-    console.log(result.rows[0])
 
     req.session.userId = result.rows[0].id
 
@@ -72,7 +71,7 @@ export async function loginUser(req, res) {
   username = username.trim()
 
   try {
-    const result = await database.query({
+    const result = await query({
       text: `
       SELECT id, password
       FROM users

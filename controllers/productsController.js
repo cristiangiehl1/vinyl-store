@@ -1,8 +1,8 @@
-import database from '../infra/database.js'
+import { query } from '../infra/database.js'
 
 export async function getGenres(req, res) {
   try {
-    const result = await database.query(
+    const result = await query(
       `
       SELECT DISTINCT genre
       FROM products
@@ -40,7 +40,7 @@ export async function getProducts(req, res) {
       values.push(searchPattern, searchPattern, searchPattern)
     }
 
-    const result = await database.query({ text, values })
+    const result = await query({ text, values })
 
     res.json(result.rows)
   } catch (err) {
