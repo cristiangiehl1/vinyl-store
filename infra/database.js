@@ -18,14 +18,14 @@ export async function query(queryObj) {
 }
 
 export async function getNewClient() {
-  const portEnv = process.env.POSTGRES_PORT
+  const DATABASE_URL = process.env.DATABASE_URL
 
-  if (!portEnv) {
+  if (!DATABASE_URL) {
     throw new Error('POSTGRES_PORT is not defined in environment variables')
   }
 
   const client = new Client({
-    connectionString: process.env.DATABASE_URL,
+    connectionString: DATABASE_URL,
     ssl: getSSLValues(),
   })
 
