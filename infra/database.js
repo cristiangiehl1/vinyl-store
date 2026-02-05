@@ -21,7 +21,7 @@ export async function getNewClient() {
   const DATABASE_URL = process.env.DATABASE_URL
 
   if (!DATABASE_URL) {
-    throw new Error('POSTGRES_PORT is not defined in environment variables')
+    throw new Error('DATABASE_URL is not defined in environment variables')
   }
 
   const client = new Client({
@@ -34,7 +34,11 @@ export async function getNewClient() {
 }
 
 function getSSLValues() {
-  if (process.env.POSTGRES_CA) return { ca: process.env.POSTGRES_CA }
+  if (process.env.POSTGRES_CA) {
+    return { ca: process.env.POSTGRES_CA, rejectUnauthorized: true }
+  }
 
-  return process.env.NODE_ENV === 'production' ? true : false
+  return process.env.NODE_ENV === 'production'
+    ? { rejectUnauthorized: true }
+    : false
 }
