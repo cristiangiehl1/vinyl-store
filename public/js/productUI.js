@@ -28,8 +28,14 @@ export function renderProducts(products) {
 
 export async function applySearchFilter() {
   const search = document.getElementById('search-input').value.trim()
+  const select = document.getElementById('genre-select')
+
   const filters = {}
-  if (search) filters.search = search
+  if (search) {
+    select.value = ''
+    filters.search = search
+  }
+
   const products = await getProducts(filters)
   renderProducts(products)
 }
