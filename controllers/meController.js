@@ -1,16 +1,16 @@
 import { query } from '../infra/database.js'
 
 export async function getCurrentUser(req, res) {
-  const userId = req.session.userId
+  const sessionToken = req.cookies.sessionId
 
   try {
-    if (!userId) {
+    if (!sessionToken) {
       return res.json({ isLoggedIn: false })
     }
 
     const result = await query({
-      text: 'SELECT name FROM users WHERE id = $1',
-      values: [userId],
+      text: 'SELECT U.name FROM sessions S LEFT JOIN users U ON u.id = S.user_id WHERE S.token = $1',
+      values: [sessionToken],
     })
 
     res.json({ isLoggedIn: true, name: result.rows[0].name })

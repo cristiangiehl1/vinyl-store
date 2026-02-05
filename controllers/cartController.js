@@ -7,7 +7,7 @@ export async function addToCart(req, res) {
     return res.status(400).json({ error: 'Invalid product ID' })
   }
 
-  const userId = req.session.userId
+  const userId = req.userId
 
   const existing = await query({
     text: `
@@ -41,8 +41,7 @@ export async function addToCart(req, res) {
 }
 
 export async function getCartCount(req, res) {
-  const userId = req.session.userId
-
+  const userId = req.userId
   const result = await query({
     text: `
       SELECT COALESCE(SUM(quantity), 0) AS total_items
@@ -56,8 +55,7 @@ export async function getCartCount(req, res) {
 }
 
 export async function getAll(req, res) {
-  const userId = req.session.userId
-
+  const userId = req.userId
   const result = await query({
     text: `
       SELECT
@@ -78,8 +76,7 @@ export async function getAll(req, res) {
 
 export async function deleteItem(req, res) {
   const itemId = parseInt(req.params.itemId, 10)
-  const userId = req.session.userId
-
+  const userId = req.userId
   if (isNaN(itemId)) {
     return res.status(400).json({ error: 'Invalid item ID' })
   }
@@ -106,8 +103,7 @@ export async function deleteItem(req, res) {
 }
 
 export async function deleteAll(req, res) {
-  const userId = req.session.userId
-
+  const userId = req.userId
   await query({
     text: `
       DELETE FROM cart_items
