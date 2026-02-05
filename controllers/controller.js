@@ -12,7 +12,6 @@ function setSessionCookie({ res, token }) {
 function clearSessionCookie(res) {
   res.clearCookie('sessionId', {
     path: '/',
-    maxAge: -1,
     httpOnly: true,
     secure: process.env.NODE_ENV !== 'development',
   })
